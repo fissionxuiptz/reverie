@@ -7,11 +7,11 @@ require 'configliere'
 Settings.use :commandline, :config_file, :define
 
 class NullLogger
-  def debug(*) end
-  def info(*)  end
-  def warn(*)  end
-  def error(*) end
-  def fatal(*) end
+  def debug(*) true end
+  def info(*)  true end
+  def warn(*)  true end
+  def error(*) true end
+  def fatal(*) true end
 end
 
 class Reverie
@@ -22,7 +22,7 @@ class Reverie
 
   Settings.define :conf, type: :filename, description: 'The location of the configuration file',
                   default: Configliere::DEFAULT_CONFIG_LOCATION[:user].call('reverie')
-  Settings.define :log,  type: :filename, description: 'The location of the log file'
+  Settings.define :log, type: :filename, description: 'The location of the log file'
   Settings.define :updated_at, type: DateTime
 
   attr_accessor :options, :args
@@ -41,21 +41,18 @@ class Reverie
     @args = { key:    @options[:key],
               record: @options[:record],
               format: 'yaml' }
-
-    @options.resolve!
   end
 
   def update_dns
-    if Time.now - (@options[:updated_at] || Time.mktime(0)) > 900 and
-       ip = get_ip and
-       ip != @options[:ip] and
-       replace_record @options[:record], ip
-      @options.merge! ip: ip, updated_at: Time.now
-      @options.save! @options.conf
-      @log.info "#{ @options[:record] } updated to #{ ip }"
-    else
-      @log.debug "not updating #{ @options[:record] }"
-    end
+    t = Time.now - (@options[:updated_at] || Time.mktime(0))
+    @log.debug "too soon, updated #{ t.to_int }s ago" and return unless t > 900
+    @log.debug 'get_ip failed'                        and return unless ip = get_ip
+    @log.debug "not updating #{ @options[:record] }"  and return unless ip != @options[:ip]
+    @log.debug 'replace_record failed'                and return unless replace_record @options[:record], ip
+
+    @options.merge! ip: ip, updated_at: Time.now
+    @options.save! @options.conf
+    @log.info "#{ @options[:record] } updated to #{ ip }"
   end
 
   def replace_record(record, ip)
@@ -74,6 +71,7 @@ class Reverie
 
   def get_ip
     ip = Net::HTTP.get_response(IP_URI).body.chomp
+    @log.debug "get_ip found #{ ip }"
     ip if ip =~ Resolv::IPv4::Regex
   rescue Net::ReadTimeout => e
     warn 'IP lookup timed out'
