@@ -6,14 +6,6 @@ require 'configliere'
 
 Settings.use :commandline, :config_file, :define
 
-class NullLogger
-  def debug(*) true end
-  def info(*)  true end
-  def warn(*)  true end
-  def error(*) true end
-  def fatal(*) true end
-end
-
 class Reverie
 
   DH_URI = URI 'https://api.dreamhost.com/'
@@ -23,7 +15,6 @@ class Reverie
   Settings.define :conf, type: :filename, description: 'The location of the configuration file',
                   default: Configliere::DEFAULT_CONFIG_LOCATION[:user].call('reverie')
   Settings.define :log, type: :filename, description: 'The location of the log file'
-  Settings.define :updated_at, type: DateTime
 
   attr_accessor :options, :args
 
@@ -36,7 +27,9 @@ class Reverie
     @options.resolve!
     @options.read @options.conf
 
-    @log  = @options.log ? Logger.new(@options.log) : NullLogger.new
+    @log = Logger.new(@options.log || STDOUT)
+    @log.level = @options.delete('debug') ? Logger::DEBUG : Logger::INFO
+    @options.delete('log') unless @options.log
 
     @args = { key:    @options[:key],
               record: @options[:record],
