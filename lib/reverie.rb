@@ -25,7 +25,7 @@ class Reverie
   def initialize
     @options = Settings
     @options.resolve!
-    @options.read @options.conf
+    @options.read(@conf = @options.delete('conf'))
 
     @log = Logger.new(@options.log || STDOUT)
     @log.level = @options.delete('debug') ? Logger::DEBUG : Logger::INFO
@@ -44,7 +44,7 @@ class Reverie
     @log.debug 'replace_record failed'                and return unless replace_record @options[:record], ip
 
     @options.merge! ip: ip, updated_at: Time.now
-    @options.save! @options.conf
+    @options.save! @conf
     @log.info "#{ @options[:record] } updated to #{ ip }"
   end
 

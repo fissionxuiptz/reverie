@@ -12,7 +12,7 @@ Gem::Specification.new do |s|
   s.homepage    = 'http://github.com/fissionxuiptz/reverie'
   s.license     = 'MIT'
 
-  s.summary     = 'A ruby script to update Dreamhost DNS'
+  s.summary     = 'Dreamhost DNS updater'
   s.description = 'A ruby script to update Dreamhost DNS'
 
   s.files       = `git ls-files`.split $/
