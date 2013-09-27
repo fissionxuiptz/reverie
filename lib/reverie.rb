@@ -67,7 +67,7 @@ class Reverie
     @log.debug "get_ip found #{ ip }"
     ip if ip =~ Resolv::IPv4::Regex
   rescue Net::ReadTimeout => e
-    warn 'IP lookup timed out'
+    @log.warn 'IP lookup timed out'
   end
 
 private
