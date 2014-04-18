@@ -3,14 +3,13 @@ require 'resolv'
 require 'logger'
 require 'yaml'
 require 'configliere'
+require 'reverie/version'
 
 Settings.use :commandline, :config_file, :define
 
 class Reverie
-
   DH_URI = URI 'https://api.dreamhost.com/'
   IP_URI = URI 'http://myexternalip.com/raw'
-  VERSION = '1.0.1'
 
   Settings.define :conf, type: :filename, description: 'The location of the configuration file',
                   default: Configliere::DEFAULT_CONFIG_LOCATION[:user].call('reverie')
@@ -90,5 +89,4 @@ private
   rescue Net::ReadTimeout
     @log.warn "Dreamhost API timed out on #{ a[:cmd] }"
   end
-
 end
