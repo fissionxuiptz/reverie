@@ -1,3 +1,8 @@
+# Reverie
+#
+# Ported from Ian McKellar's dreamhost-ddns
+# https://github.com/ianloic/dreamhost-ddns
+
 require 'net/http'
 require 'resolv'
 require 'logger'
@@ -79,9 +84,11 @@ private
     DH_URI.query = URI.encode_www_form a
     @log.debug DH_URI.query
 
-    opts = { use_ssl: true,
-             ssl_version: :SSLv3,
-             verify_mode: OpenSSL::SSL::VERIFY_PEER }
+    opts = {
+      use_ssl:     true,
+      ssl_version: :SSLv3,
+      verify_mode: OpenSSL::SSL::VERIFY_PEER
+    }
     res = YAML.load(Net::HTTP.start(DH_URI.host, DH_URI.port, opts) { |http| http.get DH_URI }.body)
     @log.debug "#{ a[:cmd] }: #{ res['result'] }"
 
