@@ -1,4 +1,4 @@
-Reverie.class_eval do
+class Reverie
   SM_URI = URI 'http://softwaremojo.com/'
 
   def get_ip
