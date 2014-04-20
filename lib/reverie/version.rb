@@ -1,4 +1,4 @@
 # Reverie version
 class Reverie
-  VERSION = '1.0.2m'
+  VERSION = '1.0.2.13'
 end
