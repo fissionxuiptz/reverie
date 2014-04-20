@@ -28,7 +28,7 @@ class Reverie
     found:    'get_ip found %s',
     too_soon: 'too soon, updated %ds ago',
     same:     'not updating %s',
-    time_out: '%s timed out on %s',
+    timeout:  '%s timed out on %s',
     kv:       '%s: %s'
   }
 
@@ -105,7 +105,7 @@ class Reverie
     d :found, ip
     ip if ip =~ Resolv::IPv4::Regex
   rescue Net::ReadTimeout
-    w :time_out, 'IP Lookup', IP_URI
+    w :timeout, 'IP Lookup', IP_URI
   end
 
   private
@@ -125,7 +125,7 @@ class Reverie
 
     return res['result'], res['data']
   rescue Net::ReadTimeout
-    w :time_out, 'Dreamhost API', a[:cmd]
+    w :timeout, 'Dreamhost API', a[:cmd]
   end
 
   def d(msg, *args)
