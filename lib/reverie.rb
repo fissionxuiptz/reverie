@@ -101,7 +101,7 @@ class Reverie
   end
 
   def get_ip
-    ip = Net::HTTP.get_response(IP_URI).body.chomp
+    ip = Net::HTTP.get_response(IP_URI).body.strip
     d :found, ip
     ip if ip =~ Resolv::IPv4::Regex
   rescue Net::ReadTimeout
