@@ -15,9 +15,9 @@ Gem::Specification.new do |s|
   s.summary     = 'Dreamhost DNS updater'
   s.description = 'A ruby script to update Dreamhost DNS'
 
-  s.files       = `git ls-files`.split $/
-  s.executables = s.files.grep(%r{^bin/}) { |f| File.basename f }
-  s.test_files  = s.files.grep(%r{^(test|spec|features)/})
+  s.files       = `git ls-files`.split "\n"
+  s.executables = s.files.grep(/^bin\//) { |f| File.basename f }
+  s.test_files  = s.files.grep(/^(test|spec|features)\//)
   s.require_paths = ['lib']
 
   s.add_runtime_dependency 'configliere', '~> 0.4'
