@@ -5,5 +5,8 @@ gemspec
 
 group :test do
   gem 'rake'
-  gem 'minitest', '~> 4.3'
+  gem 'minitest', '~> 5.3'
+  gem 'ruby_gntp'
+  gem 'guard'
+  gem 'guard-minitest'
 end
