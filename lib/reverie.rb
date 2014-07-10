@@ -8,13 +8,18 @@ require 'resolv'
 require 'logger'
 require 'yaml'
 require 'configliere'
-require 'reverie/version'
+
+require_relative 'reverie/configliere'
+require_relative 'reverie/version'
 
 Settings.use :commandline, :config_file, :define
 
 class Reverie
+  attr_accessor :log, :conf, :args
+
   DH_URI = URI 'https://api.dreamhost.com/'
   IP_URI = URI 'http://myexternalip.com/raw'
+  CONF   = Configliere::DEFAULT_CONFIG_LOCATION[:user_config][:reverie]
 
   OPENSSL_V3 = {
     use_ssl:     true,
@@ -29,13 +34,14 @@ class Reverie
     too_soon: 'too soon, updated %ds ago',
     same:     'not updating %s',
     timeout:  '%s timed out on %s',
-    kv:       '%s: %s'
+    kv:       '%s: %s',
+    start:    'connecting to %s'
   }
 
   Settings.define :conf,
                   type:        :filename,
                   description: 'The location of the configuration file',
-                  default:     Configliere::DEFAULT_CONFIG_LOCATION[:user].call('reverie')
+                  default:     CONF
 
   Settings.define :log,
                   type:        :filename,
@@ -47,17 +53,29 @@ class Reverie
 
   def initialize
     Settings.resolve!
-    Settings.read(@conf = Settings.delete('conf'))
 
-    @log = Logger.new(Settings.log || STDOUT)
-    @log.level = Settings.delete('debug') ? Logger::DEBUG : Logger::INFO
-    Settings.delete('log') unless Settings.log
+    init_conf
+    init_log
+    init_args
+  end
 
+  def init_args
     @args = {
       key:    Settings[:key],
       record: Settings[:record],
       format: 'yaml'
     }
+  end
+
+  def init_conf
+    @conf = Settings.delete('conf') || CONF
+    Settings.read @conf
+  end
+
+  def init_log
+    @log = Logger.new(Settings.log || STDOUT)
+    @log.level = Settings.delete('debug') ? Logger::DEBUG : Logger::INFO
+    Settings.delete('log') unless Settings.log
   end
 
   def settings
@@ -101,6 +119,7 @@ class Reverie
   end
 
   def get_ip
+    d :start, IP_URI
     ip = Net::HTTP.get_response(IP_URI).body.strip
     d :found, ip
     ip if ip =~ Resolv::IPv4::Regex
@@ -123,24 +142,24 @@ class Reverie
     res = YAML.load(req.body)
     d :kv, a[:cmd], res['result']
 
-    return res['result'], res['data']
+    [res['result'], res['data']]
   rescue Net::ReadTimeout
     w :timeout, 'Dreamhost API', a[:cmd]
   end
 
   def d(msg, *args)
-    log :debug, msg, *args
+    __log :debug, msg, *args
   end
 
   def w(msg, *args)
-    log :warn, msg, *args
+    __log :warn, msg, *args
   end
 
   def i(msg, *args)
-    log :info, msg, *args
+    __log :info, msg, *args
   end
 
-  def log(level, msg, *args)
+  def __log(level, msg, *args)
     @log.send level, MSGS[msg] ? MSGS[msg] % args : msg
   end
 end
