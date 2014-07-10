@@ -15,11 +15,11 @@ require_relative 'reverie/version'
 Settings.use :commandline, :config_file, :define
 
 class Reverie
-  attr_accessor :log, :conf, :args
+  attr_accessor :args, :config, :log
 
   DH_URI = URI 'https://api.dreamhost.com/'
   IP_URI = URI 'http://myexternalip.com/raw'
-  CONF   = Configliere::DEFAULT_CONFIG_LOCATION[:user_config][:reverie]
+  CONFIG = Configliere::DEFAULT_CONFIG_LOCATION[:user_config][:reverie]
 
   OPENSSL_V3 = {
     use_ssl:     true,
@@ -41,7 +41,7 @@ class Reverie
   Settings.define :conf,
                   type:        :filename,
                   description: 'The location of the configuration file',
-                  default:     CONF
+                  default:     CONFIG
 
   Settings.define :log,
                   type:        :filename,
@@ -68,8 +68,8 @@ class Reverie
   end
 
   def init_conf
-    @conf = Settings.delete('conf') || CONF
-    Settings.read @conf
+    @config = Settings.delete('conf') || CONFIG
+    Settings.read @config
   end
 
   def init_log
@@ -93,7 +93,7 @@ class Reverie
     end
 
     Settings.merge! ip: ip, updated_at: Time.now
-    Settings.save! @conf
+    Settings.save! @config
     i :success, Settings[:record], ip
   end
 
