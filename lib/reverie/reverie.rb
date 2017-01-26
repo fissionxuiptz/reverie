@@ -23,7 +23,7 @@ class Reverie
 
   OPENSSL_V3 = {
     use_ssl:     true,
-    ssl_version: :SSLv3,
+    ssl_version: :TLSv1,
     verify_mode: OpenSSL::SSL::VERIFY_PEER
   }
 
