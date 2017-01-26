@@ -27,17 +27,6 @@ class Reverie
     verify_mode: OpenSSL::SSL::VERIFY_PEER
   }
 
-  MSGS = {
-    success:  '%s updated to %s',
-    fail:     '%s failed',
-    found:    'get_ip found %s',
-    too_soon: 'too soon, updated %ds ago',
-    same:     'not updating %s',
-    timeout:  '%s timed out on %s',
-    kv:       '%s: %s',
-    start:    'connecting to %s'
-  }
-
   Settings.define :conf,
                   type:        :filename,
                   description: 'The location of the configuration file',
@@ -69,12 +58,12 @@ class Reverie
 
   def init_conf
     @conf = Settings.delete('conf') || CONF
-    Settings.read @conf
+    Settings.read conf
   end
 
   def init_log
     @log = Logger.new(Settings.log || STDOUT)
-    @log.level = Settings.delete('debug') ? Logger::DEBUG : Logger::INFO
+    log.level = Settings.delete('debug') ? Logger::DEBUG : Logger::INFO
     Settings.delete('log') unless Settings.log
   end
 
@@ -83,18 +72,18 @@ class Reverie
   end
 
   def update_dns
-    t = Time.now - (Settings[:updated_at] || Time.mktime(0))
+    last_update = Time.now - (Settings[:updated_at] || Time.mktime(0))
 
-    if (t < 900             and d :too_soon, t) ||
-       ((ip = get_ip).nil?  and d :fail, 'get_ip') ||
-       (ip == Settings[:ip] and d :same, Settings[:record]) ||
-       (!replace_record Settings[:record], ip and d :fail, 'replace_record')
+    if (last_update < 900   and log.debug "too soon, updated #{last_update}s ago") ||
+       ((ip = get_ip).nil?  and log.debug "get_ip failed") ||
+       (ip == Settings[:ip] and log.debug "not updating #{Settings[:record]}") ||
+       (!replace_record Settings[:record], ip and log.debug "replace_record failed")
       return
     end
 
     Settings.merge! ip: ip, updated_at: Time.now
-    Settings.save! @conf
-    i :success, Settings[:record], ip
+    Settings.save! conf
+    log.info "#{Settings[:record]} updated to #{ip}"
   end
 
   def replace_record(record, ip)
@@ -119,12 +108,12 @@ class Reverie
   end
 
   def get_ip
-    d :start, IP_URI
+    log.debug "connecting to #{IP_URI}"
     ip = Net::HTTP.get_response(IP_URI).body.strip
-    d :found, ip
+    log.debug "got #{ip}"
     ip if ip =~ Resolv::IPv4::Regex
   rescue Net::ReadTimeout
-    w :timeout, 'IP Lookup', IP_URI
+    log.warn :timeout, 'IP Lookup', IP_URI
   end
 
   private
@@ -133,33 +122,17 @@ class Reverie
     a = @args.merge(cmd: "dns-#{ cmd }", unique_id: SecureRandom.uuid)
     a.merge! args
 
-    d(DH_URI.query = URI.encode_www_form(a))
+    log.debug(DH_URI.query = URI.encode_www_form(a))
 
     req = Net::HTTP.start(DH_URI.host, DH_URI.port, OPENSSL_V3) do |http|
       http.get DH_URI
     end
 
     res = YAML.load(req.body)
-    d :kv, a[:cmd], res['result']
+    log.debug "#{a[:cmd]}: #{res['result']}"
 
     [res['result'], res['data']]
   rescue Net::ReadTimeout
-    w :timeout, 'Dreamhost API', a[:cmd]
-  end
-
-  def d(msg, *args)
-    __log :debug, msg, *args
-  end
-
-  def w(msg, *args)
-    __log :warn, msg, *args
-  end
-
-  def i(msg, *args)
-    __log :info, msg, *args
-  end
-
-  def __log(level, msg, *args)
-    @log.send level, MSGS[msg] ? MSGS[msg] % args : msg
+    log.warn "Dreamhost API timed out on #{a[:cmd]}"
   end
 end
