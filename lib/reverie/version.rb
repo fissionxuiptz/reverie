@@ -1,4 +1,4 @@
 # Reverie version
-class Reverie
+module Reverie
   VERSION = '1.0.4'
 end
